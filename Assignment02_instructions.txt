@@ -1,0 +1,11 @@
+Repository: https://github.com/MT1ST/A00985511_COMP4016_Assignment02
+Comments: assignment2-deployment.yaml should have all the workloads to run in sequence - "kubectl apply -f assignment2-deployment.yaml" will work with everything in place under namespace "aryan20".
+All of env, config, and secrets work (Secrets apparently did work before, just that I had a malformed base64-encoded string, so it kept crashing. Either way, did some additional fixes.)
+Secrets expect you to not have the "." at the beginning of the ".secretValue" name as the endpoint, but will work with the "." regardless, with the "." expected as part of the Secret entry in the yaml? Not entirely sure on that, but it seems to work that way.
+You can change the values of a secret, env, or config, and you can change the name of the "key" and have that work as the name of the endpoint:
+
+(i.e. If you change `configValue: "snake"` to `anotherValue: "bar"`, you would now be able to get the value at "localhost:30000/bar".)
+
+The one major hiccup I seemed to encounter is that you can't have more than one secret in the data of the Secret kind - if you do, it does try to have those values, but apparently won't quite pick up both entries?
+You can change the key of the secret as like the config above (And the env), but only the env and configMap apparently take well to adding a second key-value pair and getting more than one endpoint.
+Unsure of what makes Secret unique there, but it's there.
