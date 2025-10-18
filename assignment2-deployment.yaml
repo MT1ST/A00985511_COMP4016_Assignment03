@@ -1,5 +1,5 @@
 apiVersion: v1
-# Nice thing about Namespace usage: we can just delete the entire set of things around a deployment,
+# Nice thing about Namespace usage: we can just delete the entire set of things around a set,
 # if they're in a namespace by deleting the Namespace.
 kind: Namespace 
 metadata:
@@ -10,22 +10,59 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-   name: deployment-secret
+   name: set-secret
    namespace: aryan20
 data:
    # dot at the front is important, but will not be part of the API name to recall it.
    .secretValue: c2VjcmV0U25ha2U=
    # secretValue should be "secretSnake" in its current base64 encoding.
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: PersistentVolume
 metadata:
-  name: assignment02-deployment
+  name: save-storage
+  namespace: aryan20
+spec:
+  capacity:
+    storage: 1Ki
+  #volumeMode: Filesystem #default Filesystem anyways
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: "E:/comp4016_docker/volumes/"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - comp4016-docker-assignment
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: save-storage-claim
+  namespace: aryan20
+spec:
+  accessModes:
+    - ReadWriteOnce
+  #volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Ki
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: assignment03-set
   namespace: aryan20
   labels:
     app: comp4016-docker-assignment
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: comp4016-docker-assignment
@@ -38,7 +75,7 @@ spec:
         - name: assigment02
           image: mt1st/comp4016_assignment1_jboss_with_maven:assignment2
           ports:
-          - containerPort: 8080:
+          - containerPort: 8080
             name: assignment-port
           volumeMounts:
             - name: secret-value-volume
@@ -47,20 +84,25 @@ spec:
             - name: config-volume
               readOnly: true
               mountPath: "/config"
+            - name: volume-mount
+              mountPath: "/usr/share/volume"
           env:
           - name: envValue
             value: "environmentSnake"
       volumes:
         - name: secret-value-volume
           secret:
-            secretName: deployment-secret
+            secretName: set-secret
         - name: config-volume
           configMap:
             # Provide the name of the ConfigMap you want to mount.
-            name: deployment-config
+            name: set-config
             # An array of keys from the ConfigMap to create as files
             # When left blank as they are now, that means they will be key as filename, and value as contents.
             items:
+        - name: volume-mount
+          persistentVolumeClaim:
+            claimName: save-storage-claim
 ---
 apiVersion: v1
 kind: Service
@@ -71,18 +113,18 @@ metadata:
     app: comp4016-docker-assignment
 spec:
   ports:
-  - nodePort: 30000
-    port: 8080 # Needs to be 8080, as containerPort name doesn't work here - I guess technically this could be any port name?
+  - port: 8080 # Needs to be 8080, as containerPort name doesn't work here - I guess technically this could be any port name?
     protocol: TCP
+    #nodePort: 30000
     targetPort: assignment-port # The target port - as I understand, relevant if we want to only allow specific ports to be accessed, as in this case.
   selector:
     app: comp4016-docker-assignment
-  type: NodePort
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: deployment-config
+  name: set-config
   namespace: aryan20
 data:  
   configValue: "snake"
