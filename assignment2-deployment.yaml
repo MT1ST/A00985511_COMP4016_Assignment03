@@ -73,7 +73,7 @@ spec:
     spec:
       containers:
         - name: assigment02
-          image: mt1st/comp4016_assignment1_jboss_with_maven:assignment2
+          image: mt1st/comp4016_assignment1_jboss_with_maven:assignment3
           ports:
           - containerPort: 8080
             name: assignment-port
@@ -113,9 +113,9 @@ metadata:
     app: comp4016-docker-assignment
 spec:
   ports:
-  - port: 8080 # Needs to be 8080, as containerPort name doesn't work here - I guess technically this could be any port name?
+  - port: 30000 # Needs to be 30000, as that is the endpoint expected in the end.
     protocol: TCP
-    #nodePort: 30000
+    #nodePort: 30000 # Only when we're using NodePort as the Service type.
     targetPort: assignment-port # The target port - as I understand, relevant if we want to only allow specific ports to be accessed, as in this case.
   selector:
     app: comp4016-docker-assignment
