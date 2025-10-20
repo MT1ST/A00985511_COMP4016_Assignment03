@@ -21,6 +21,10 @@ public class ValueMappings {
 	public static final String SECRET_MAP_KEY;
 	public static final String CONFIG_MAP_KEY;
 	
+	public static final String VOLUME_FILE_LOCATION;
+	
+	public static final String DEFAULT_VOLUME_FILE_NAME;
+	
 	private static final String REMOVABLE_PREFIX;
 	private static final String REPLACED_PREFIX;
 	
@@ -36,6 +40,9 @@ public class ValueMappings {
 		LOG = LogManager.getLogger(ValueMappings.class);
 		SECRET_FILE_LOCATION = "/etc/secret-volume";
 		CONFIG_FILES_PATH = "/config";
+		
+		VOLUME_FILE_LOCATION = "/usr/share/volume";
+		DEFAULT_VOLUME_FILE_NAME = VOLUME_FILE_LOCATION + "/" + "testString";
 		
 		REMOVABLE_PREFIX = "."; // If this is the start of a secret key, we want to remove this, so...we define it here.
 		REPLACED_PREFIX = "";
