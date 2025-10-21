@@ -175,20 +175,20 @@ public class BusyServlet extends HttpServlet{
 		res.setStatus(HttpServletResponse.SC_OK);
 		
 		res.getWriter().println("BusyWait kicked in - seconds running BusyWait process until the maximum where it should be lowered: ");
-		res.getWriter().println((currentCountdown != null ? (currentCountdown /SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE) : "0" + "/" + (MINUTES_BUSY*MINUTES_TO_SECONDS_CONVERSION_VALUE)));
+		res.getWriter().println((currentCountdown != null ? (currentCountdown /SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE) : "0") + "/" + (MINUTES_BUSY*MINUTES_TO_SECONDS_CONVERSION_VALUE));
 		
 	}
 	
 	private void busyFunction() {
-		File busyWaitFile = null;
-		boolean fileRead = false;
 		try{
-			busyWaitFile = new File(BUSYWAIT_FILE_LOCATION);
-			
-			while(busyWaitFile != null && busyWaitFile.exists()) {
+			long minutesElapsed = ((int) MINUTES_BUSY) + 1; // By default, we want to end a busy process if we can't figure out the timestamp.
+			if(BUSYWAIT_START_TIMESTAMP != null) {
+				minutesElapsed = ((new Date().getTime() - BUSYWAIT_START_TIMESTAMP)/MILLISECONDS_TO_MINUTES_CONVERSION_VALUE);
+			}
+			while(minutesElapsed < MINUTES_BUSY){
 				// Here, we want to do something that could take a busy amount of time, but *not* too much memory.
 				try {
-					int randomValue = (int) (Math.random() * (MILLISECONDS_TO_MINUTES_CONVERSION_VALUE)); // We want to prevent this function from being cachable, so we need some randomness.
+					int randomValue = (int) (Math.random() * (MINUTES_TO_SECONDS_CONVERSION_VALUE)); // We want to prevent this function from being cachable, so we need some randomness.
 					int[] arrayToSort = new int[randomValue];
 					for(int i = 0; i < arrayToSort.length; i++) {
 						arrayToSort[i] = i% arrayToSort.length;
