@@ -3,6 +3,9 @@ package ca.bcit.comp4016.A00985511.Assignment02.servlets;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -31,12 +34,20 @@ public class BusyServlet extends HttpServlet{
 	
 	public static final float MINUTES_BUSY;
 	
+	private static final int MINUTES_TO_SECONDS_CONVERSION_VALUE;
+	
 	private static final int MILLISECONDS_TO_MINUTES_CONVERSION_VALUE;
 	private static final int SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE;
 	
+	private static final String BUSY_SERVLET_URL;
+	
 	private static final String BUSYWAIT_FILE_LOCATION;
 	
+	
+	
 	private static Long BUSYWAIT_START_TIMESTAMP;
+	
+	
 	
 	static {
 		LOG = LogManager.getLogger(BusyServlet.class);
@@ -44,9 +55,13 @@ public class BusyServlet extends HttpServlet{
 		SERVLET_CONTENT_TYPE_DEFAULT = "text/plain";
 		BUSYWAIT_FILE_LOCATION = ValueMappings.VOLUME_FILE_LOCATION + "/busyWaitValue";
 		SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE = 1000;
-		MILLISECONDS_TO_MINUTES_CONVERSION_VALUE = SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE * 60;
+		MINUTES_TO_SECONDS_CONVERSION_VALUE = 60;
+		MILLISECONDS_TO_MINUTES_CONVERSION_VALUE = SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE * MINUTES_TO_SECONDS_CONVERSION_VALUE;
+		
 		
 		BUSYWAIT_START_TIMESTAMP = null; // Until read or updated, treat as null. Makes the previous code sort of work better.
+		
+		BUSY_SERVLET_URL = "http://jboss-service.aryan20:30000/busywait";
 	}
 		
 	@Override
@@ -139,15 +154,59 @@ public class BusyServlet extends HttpServlet{
 				
 			}
 		}else if(currentCountdown != null) {
-			// Busy function in here, or a threaded version that can kick off while the writer finishes.
+			try {
+				LOG.info("Attempting to call the server again, to force load balancing to balance.");
+				HttpURLConnection con = (HttpURLConnection) (new URL(BUSY_SERVLET_URL)).openConnection(); // Just to make sure we do this across LoadBalanced machines.
+				// Busy function in here, or a threaded version that can kick off while the writer finishes.
+				LOG.info("Making busy thread.");
+				new Thread(new Runnable() {
+						public void run() {
+							LOG.info("Okay, actually running threadable.");
+							busyFunction();
+						}
+				}).start();
+				LOG.info("Busy work started");
+			}catch(Exception error) {
+				LOG.error("Ran into issue when trying to run busy stuff: " + error.getMessage());
+			}
 		}
 		res.setContentType(SERVLET_CONTENT_TYPE_DEFAULT);
 		
 		res.setStatus(HttpServletResponse.SC_OK);
 		
-		res.getWriter().println("BusyWait kicked in - seconds until BusyWait process should be lowered: ");
-		res.getWriter().println(currentCountdown != null ? (currentCountdown /SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE) : "0");
+		res.getWriter().println("BusyWait kicked in - seconds running BusyWait process until the maximum where it should be lowered: ");
+		res.getWriter().println((currentCountdown != null ? (currentCountdown /SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE) : "0" + "/" + (MINUTES_BUSY*MINUTES_TO_SECONDS_CONVERSION_VALUE)));
 		
+	}
+	
+	private void busyFunction() {
+		File busyWaitFile = null;
+		boolean fileRead = false;
+		try{
+			busyWaitFile = new File(BUSYWAIT_FILE_LOCATION);
+			
+			while(busyWaitFile != null && busyWaitFile.exists()) {
+				// Here, we want to do something that could take a busy amount of time, but *not* too much memory.
+				try {
+					int randomValue = (int) (Math.random() * (MILLISECONDS_TO_MINUTES_CONVERSION_VALUE)); // We want to prevent this function from being cachable, so we need some randomness.
+					int[] arrayToSort = new int[randomValue];
+					for(int i = 0; i < arrayToSort.length; i++) {
+						arrayToSort[i] = i% arrayToSort.length;
+					}
+					LOG.info("Busy writing the following to Log: " + Arrays.toString(arrayToSort));
+					Arrays.sort(arrayToSort); // We don't need to be *that* inefficient, I hope. Maybe we be more inefficient with the number generation?
+					LOG.info("Busy writing the sorted list to Log: " + Arrays.toString(arrayToSort));
+				}catch(Exception e) {
+					LOG.error("Busy attempt ran into issue: " + e.getMessage());
+				}finally {
+					
+				}
+			}
+		}catch(Exception err) {
+			LOG.error("Issue reading Busy Wait File while being busy: " + err.getMessage());
+		}finally {
+			
+		}
 	}
 	
 	@Override
