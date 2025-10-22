@@ -157,6 +157,10 @@ public class BusyServlet extends HttpServlet{
 			try {
 				LOG.info("Attempting to call the server again, to force load balancing to balance.");
 				HttpURLConnection con = (HttpURLConnection) (new URL(BUSY_SERVLET_URL)).openConnection(); // Just to make sure we do this across LoadBalanced machines.
+				con.setRequestMethod("GET");
+				LOG.info("Sending connection to start another request");
+				con.connect();
+				LOG.info("Connection sent - should be tripping another server, depending on how load balancing works.");
 				// Busy function in here, or a threaded version that can kick off while the writer finishes.
 				LOG.info("Making busy thread.");
 				new Thread(new Runnable() {
@@ -166,6 +170,8 @@ public class BusyServlet extends HttpServlet{
 						}
 				}).start();
 				LOG.info("Busy work started");
+				con.disconnect();
+				LOG.info("Connection disconnected - other server should still be doing things, as I understand.");
 			}catch(Exception error) {
 				LOG.error("Ran into issue when trying to run busy stuff: " + error.getMessage());
 			}
