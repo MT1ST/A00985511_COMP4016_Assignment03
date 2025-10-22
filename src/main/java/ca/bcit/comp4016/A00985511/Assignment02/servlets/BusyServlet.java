@@ -145,6 +145,7 @@ public class BusyServlet extends HttpServlet{
 		
 		if((currentCountdown != null ) && ((currentCountdown / MILLISECONDS_TO_MINUTES_CONVERSION_VALUE) >= MINUTES_BUSY)) {
 			BUSYWAIT_START_TIMESTAMP = null;
+			currentCountdown = null; // Well, okay, if we're stopping it, then we don't want to run it again.
 			if(busyWaitFile != null) {
 				try {
 					busyWaitFile.delete(); // We don't want the existing file to still be around here.
@@ -155,6 +156,8 @@ public class BusyServlet extends HttpServlet{
 			}
 		}else if(currentCountdown != null) {
 			try {
+				
+				// Might not be necessary? If we'reonly planning on taking down one CPU/Pod in a StatefulSet.
 				LOG.info("Attempting to call the server again, to force load balancing to balance.");
 				HttpURLConnection con = (HttpURLConnection) (new URL(BUSY_SERVLET_URL)).openConnection(); // Just to make sure we do this across LoadBalanced machines.
 				con.setRequestMethod("GET");
@@ -180,7 +183,8 @@ public class BusyServlet extends HttpServlet{
 		
 		res.setStatus(HttpServletResponse.SC_OK);
 		
-		res.getWriter().println("BusyWait kicked in - seconds running BusyWait process until the maximum where it should be lowered: ");
+		res.getWriter().println("BusyWait " + ((busyWaitFile != null && busyWaitFile.exists())? "kicked in" : "stopped from previous run.") + 
+								" - seconds running BusyWait process until the maximum where it should be lowered: ");
 		res.getWriter().println((currentCountdown != null ? (currentCountdown /SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE) : "0") + "/" + (MINUTES_BUSY*MINUTES_TO_SECONDS_CONVERSION_VALUE));
 		
 	}
@@ -205,7 +209,13 @@ public class BusyServlet extends HttpServlet{
 				}catch(Exception e) {
 					LOG.error("Busy attempt ran into issue: " + e.getMessage());
 				}finally {
-					
+					// Right - we actually need to update the "Minutes elapsed".
+					// Otherwise, we're in a perpetual loop.
+					if(BUSYWAIT_START_TIMESTAMP != null) {
+						minutesElapsed = ((new Date().getTime() - BUSYWAIT_START_TIMESTAMP)/MILLISECONDS_TO_MINUTES_CONVERSION_VALUE);
+					}else {
+						minutesElapsed = ((int) MINUTES_BUSY) + 1;
+					}
 				}
 			}
 		}catch(Exception err) {
