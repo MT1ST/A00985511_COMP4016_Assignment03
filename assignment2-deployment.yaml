@@ -91,7 +91,7 @@ spec:
             value: "environmentSnake"
           resources:
             limits:
-              cpu: 1000m
+              cpu: 600m
             requests:
               cpu: 600m
       volumes:
