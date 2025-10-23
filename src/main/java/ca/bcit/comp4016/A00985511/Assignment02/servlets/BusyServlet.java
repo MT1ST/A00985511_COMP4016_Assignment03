@@ -149,8 +149,11 @@ public class BusyServlet extends HttpServlet{
 			if(busyWaitFile != null) {
 				try {
 					busyWaitFile.delete(); // We don't want the existing file to still be around here.
+					// Recreating the busyWait file here, because the previous timeout has at least just finished,
+					// but we apparently want to do it again.
+					boolean newBusyWait = getBusyWaitCount(busyWaitFile);
 				}catch(Exception err) {
-					LOG.info("Busy wait file could not be deleted: " + err.getMessage());
+					LOG.info("Busy wait file could not be deleted and re-created: " + err.getMessage());
 				}
 				
 			}
@@ -158,12 +161,12 @@ public class BusyServlet extends HttpServlet{
 			try {
 				
 				// Might not be necessary? If we'reonly planning on taking down one CPU/Pod in a StatefulSet.
-				LOG.info("Attempting to call the server again, to force load balancing to balance.");
-				HttpURLConnection con = (HttpURLConnection) (new URL(BUSY_SERVLET_URL)).openConnection(); // Just to make sure we do this across LoadBalanced machines.
-				con.setRequestMethod("GET");
-				LOG.info("Sending connection to start another request");
-				con.connect();
-				LOG.info("Connection sent - should be tripping another server, depending on how load balancing works.");
+//				LOG.info("Attempting to call the server again, to force load balancing to balance.");
+//				HttpURLConnection con = (HttpURLConnection) (new URL(BUSY_SERVLET_URL)).openConnection(); // Just to make sure we do this across LoadBalanced machines.
+//				con.setRequestMethod("GET");
+//				LOG.info("Sending connection to start another request");
+//				con.connect();
+//				LOG.info("Connection sent - should be tripping another server, depending on how load balancing works.");
 				// Busy function in here, or a threaded version that can kick off while the writer finishes.
 				LOG.info("Making busy thread.");
 				new Thread(new Runnable() {
@@ -173,8 +176,8 @@ public class BusyServlet extends HttpServlet{
 						}
 				}).start();
 				LOG.info("Busy work started");
-				con.disconnect();
-				LOG.info("Connection disconnected - other server should still be doing things, as I understand.");
+//				con.disconnect();
+//				LOG.info("Connection disconnected - other server should still be doing things, as I understand.");
 			}catch(Exception error) {
 				LOG.error("Ran into issue when trying to run busy stuff: " + error.getMessage());
 			}
@@ -183,7 +186,7 @@ public class BusyServlet extends HttpServlet{
 		
 		res.setStatus(HttpServletResponse.SC_OK);
 		
-		res.getWriter().println("BusyWait " + ((busyWaitFile != null && busyWaitFile.exists())? "kicked in" : "stopped from previous run.") + 
+		res.getWriter().println("BusyWait " + ((busyWaitFile != null && busyWaitFile.exists())? "kicked in" : "stopped from past run, may need to check again for new BusyWait process..") + 
 								" - seconds running BusyWait process until the maximum where it should be lowered: ");
 		res.getWriter().println((currentCountdown != null ? (currentCountdown /SECONDS_FROM_MILLISECONDS_CONVERSION_VALUE) : "0") + "/" + (MINUTES_BUSY*MINUTES_TO_SECONDS_CONVERSION_VALUE));
 		
