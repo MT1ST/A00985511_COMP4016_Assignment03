@@ -1,5 +1,9 @@
-Repository: https://github.com/MT1ST/A00985511_COMP4016_Assignment02
-Comments: assignment2-deployment.yaml should have all the workloads to run in sequence - "kubectl apply -f assignment2-deployment.yaml" will work with everything in place under namespace "aryan20".
+Repository: https://github.com/MT1ST/A00985511_COMP4016_Assignment03
+Comments: assignment3-stateful-set-and-deployment.yaml should have all the workloads and additional aspects needed, short of metrics-server, to run in sequence - "kubectl apply -f assignment3-stateful-set-and-deployment.yaml" will work with everything in place under namespace "aryan20" for the main StatefulSet, namespace "probe" is for the readiness probe's deployment that is being contacted by the StatefulSet to check for availability.
+Readiness probe expects service "probe-service.probe" to take port "30010" to check the "isAlive" call - as I understand, cannot bind the port from "probe-service"'s "probe-port"...Might need to look into that, as I think the service never actually had a port name to reference?
+Either way, currently works as intended. 
+~~~~
+From Assignment 2's stuff, in case it's relevant, as it's still all there:
 All of env, config, and secrets work (Secrets apparently did work before, just that I had a malformed base64-encoded string, so it kept crashing. Either way, did some additional fixes.)
 Secrets expect you to not have the "." at the beginning of the ".secretValue" name as the endpoint, but will work with the "." regardless, with the "." expected as part of the Secret entry in the yaml? Not entirely sure on that, but it seems to work that way.
 You can change the values of a secret, env, or config, and you can change the name of the "key" and have that work as the name of the endpoint:
