@@ -94,13 +94,17 @@ spec:
               cpu: 600m
             requests:
               cpu: 600m
-          #readinessProbe:
+          readinessProbe:
+            exec:
+              command:
+              - curl
+              - probe-service.probe:30010/isAlive
             #httpGet:
               #path: /isAlive
               #port: 30000
               #httpHeaders:
               #  - name: Host
-              #    value: probe-service.probe 
+              #    value: probe-service.probe
       volumes:
         - name: secret-value-volume
           secret:
