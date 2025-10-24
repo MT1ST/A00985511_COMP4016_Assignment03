@@ -94,6 +94,13 @@ spec:
               cpu: 600m
             requests:
               cpu: 600m
+          #readinessProbe:
+            #httpGet:
+              #path: /isAlive
+              #port: 30000
+              #httpHeaders:
+              #  - name: Host
+              #    value: probe-service.probe 
       volumes:
         - name: secret-value-volume
           secret:
@@ -153,12 +160,58 @@ metadata:
   namespace: aryan20
 data:  
   configValue: "snake"
-
-  # file-like keys
-#  server.config: |
-#    enemy.types=aliens,monsters
-#    player.maximum-lives=5    
-#  user-interface.properties: |
-#    color.good=purple
-#    color.bad=yellow
-#    allow.textmode=true    
+---
+apiVersion: v1
+# Okay, here, we need a second namespace for the Readiness Probe.
+kind: Namespace
+metadata:
+  name: probe
+  labels:
+    name: probe
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assignment03-deployment
+  namespace: probe
+  labels:
+    app: comp4016-docker-assignment-deployment
+spec:
+  replicas: +1 # Not using an Autoscaler
+  selector:
+    matchLabels:
+      app: comp4016-docker-assignment-deployment
+  template:
+    metadata:
+      labels:
+        app: comp4016-docker-assignment-deployment
+    spec:
+      containers:
+        - name: assigment02-deployment
+          image: mt1st/comp4016_assignment1_jboss_with_maven:assignment3
+          ports:
+          - containerPort: 8080
+            name: probe-port
+            # Because this probe is in a different namespace, we don't want to deal with volumes and envs, etc.
+          resources:
+            limits:
+              cpu: 600m
+            requests:
+              cpu: 600m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-service
+  namespace: probe
+  labels:
+    app: comp4016-docker-assignment-deployment
+spec:
+  ports:
+  - port: 30010 # Needs to be 30000, as that is the endpoint expected in the end.
+    protocol: TCP
+    #nodePort: 30010 # Only when we're using NodePort as the Service type.
+    targetPort: probe-port # The target port - as I understand, relevant if we want to only allow specific ports to be accessed, as in this case.
+  selector:
+    app: comp4016-docker-assignment-deployment
+  type: LoadBalancer
