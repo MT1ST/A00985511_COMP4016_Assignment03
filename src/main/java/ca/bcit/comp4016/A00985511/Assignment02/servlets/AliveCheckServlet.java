@@ -33,7 +33,7 @@ public class AliveCheckServlet extends HttpServlet{
 	@Override
 	public void init() throws ServletException {
 		super.init();
-		LOG.info("Initialized Foo Servlet");
+		LOG.info("Initialized AliveCheck Servlet");
 	}
 	
 	@Override
@@ -43,7 +43,7 @@ public class AliveCheckServlet extends HttpServlet{
 	
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException{		
-		LOG.info("Foo Servlet Get!");
+		LOG.info("AliveCheck Servlet Get!");
 		
 		res.setContentType(SERVLET_CONTENT_TYPE_DEFAULT);
 		
